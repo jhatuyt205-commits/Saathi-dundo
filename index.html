@@ -3,112 +3,99 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Saathi Dundo - Find Your Saathi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saathi Dundo</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#100d18;color:white}
-header{padding:22px;display:flex;justify-content:space-between}
-.logo{font-size:25px;font-weight:bold;color:#ff5b91}
-.hero{text-align:center;padding:40px 20px 20px}
-.hero h1{font-size:38px}
-.hero span{color:#ff5b91}
-.hero p,.small{color:#c9c1d0;line-height:1.6}
-.card{background:#211a2b;border:1px solid #40334d;border-radius:22px;padding:24px;max-width:420px;margin:20px auto}
+body{margin:0;background:#100d18;color:white;font-family:Arial,sans-serif}
+header{padding:22px;color:#ff5b91;font-size:25px;font-weight:bold}
+.card{background:#211a2b;border:1px solid #40334d;border-radius:20px;padding:24px;max-width:420px;margin:25px auto}
+h1,h2{text-align:center}
 input{width:100%;padding:15px;margin:9px 0;border-radius:12px;border:1px solid #594966;background:#130f1b;color:white;font-size:16px}
 button{width:100%;padding:15px;border:0;border-radius:30px;background:#ff5b91;color:white;font-size:16px;font-weight:bold;margin-top:12px}
 .secondary{background:#40334d}
-.small{text-align:center;font-size:13px}
-#message{text-align:center;overflow-wrap:anywhere;color:#ffb4cf}
-footer{text-align:center;color:#9c91a6;padding:25px;font-size:13px}
+p{text-align:center;color:#c9c1d0;line-height:1.5}
+#message{color:#ffb4cf;overflow-wrap:anywhere}
+.hidden{display:none}
 </style>
 </head>
 <body>
-<header>
- <div>
-  <div class="logo">❤️ Saathi Dundo</div>
-  <div class="small">Find your special someone</div>
- </div>
- <div>🔒 18+</div>
-</header>
+<header>❤️ Saathi Dundo</header>
 
-<section class="hero">
- <div style="font-size:55px">💞</div>
- <h1>Apna <span>Saathi</span><br>Dhoondo!</h1>
- <p>Real connections. Genuine people.<br>Start your journey today.</p>
-</section>
-
-<div class="card">
- <h2 id="heading">Create Your Account 💗</h2>
- <p class="small">Join our community of adults aged 18 and above.</p>
-
- <input id="email" type="email" placeholder="Enter your email">
- <input id="password" type="password" placeholder="Create password (minimum 6 characters)">
-
- <label class="small" style="display:block;margin-top:12px">
-  <input id="age" type="checkbox" style="width:auto">
-  I confirm that I am 18 years or older.
- </label>
-
- <button id="signup" onclick="signUp()">Create Account</button>
- <button id="login" class="secondary" onclick="signIn()">Login</button>
- <p id="message"></p>
- <p class="small">By continuing, you agree to our Terms and Privacy Policy.</p>
+<div class="card" id="auth">
+<h2>Find Your Saathi 💗</h2>
+<p>Join our 18+ community</p>
+<input id="email" type="email" placeholder="Email address">
+<input id="password" type="password" placeholder="Password (minimum 6 characters)">
+<label><input id="age" type="checkbox" style="width:auto"> I confirm I am 18 or older</label>
+<button onclick="signup()">Create Account</button>
+<button class="secondary" onclick="login()">Login</button>
+<p id="message"></p>
 </div>
 
-<footer>Saathi Dundo © 2026<br>Made for meaningful connections ❤️</footer>
+<div class="card hidden" id="dashboard">
+<h1>Welcome to Saathi Dundo ❤️</h1>
+<p id="welcome"></p>
+<p>Your account is connected successfully.</p>
+<p>More dating features are coming soon!</p>
+<button onclick="logout()">Logout</button>
+</div>
 
 <script>
-const SUPABASE_URL = "https://grevhaugdqftoiphetwd.supabase.co";
-const SUPABASE_KEY = "sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
+const URL="https://grevhaugdqftoiphetwd.supabase.co";
+const KEY="sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
+const db=window.supabase.createClient(URL,KEY);
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-function details(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- if(!email || !email.includes("@")){
-  throw new Error("Please enter a valid email address.");
- }
- if(password.length<6){
-  throw new Error("Password must be at least 6 characters.");
- }
- if(!document.getElementById("age").checked){
-  throw new Error("You must confirm that you are 18 or older.");
- }
- return {email,password};
+function showMessage(t){
+ document.getElementById("message").textContent=t;
 }
-
-async function signUp(){
- const msg=document.getElementById("message");
+function showDashboard(session){
+ document.getElementById("auth").classList.add("hidden");
+ document.getElementById("dashboard").classList.remove("hidden");
+ document.getElementById("welcome").textContent="Logged in as "+session.user.email;
+}
+function showAuth(){
+ document.getElementById("dashboard").classList.add("hidden");
+ document.getElementById("auth").classList.remove("hidden");
+}
+async function signup(){
  try{
-  const {email,password}=details();
-  msg.textContent="Creating your account...";
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  if(!email||password.length<6) throw Error("Enter a valid email and password of at least 6 characters.");
+  if(!document.getElementById("age").checked) throw Error("Please confirm you are 18 or older.");
+  showMessage("Creating account...");
   const {data,error}=await db.auth.signUp({
    email,password,
    options:{emailRedirectTo:"https://jhatuyt205-commits.github.io/Saathi-dundo/"}
   });
   if(error) throw error;
-  msg.textContent=data.session
-   ?"Account created! You are logged in."
-   :"Account created! Please check your email for the verification link.";
- }catch(e){msg.textContent=e.message;}
+  if(data.session) showDashboard(data.session);
+  else showMessage("Account created! Check your email and verify your account, then log in.");
+ }catch(e){showMessage(e.message);}
 }
-
-async function signIn(){
- const msg=document.getElementById("message");
+async function login(){
  try{
-  const {email,password}=details();
-  msg.textContent="Logging in...";
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+  if(!email||!password) throw Error("Enter your email and password.");
+  showMessage("Logging in...");
   const {data,error}=await db.auth.signInWithPassword({email,password});
   if(error) throw error;
-  msg.textContent="Welcome to Saathi Dundo! Login successful ❤️";
- }catch(e){msg.textContent=e.message;}
+  showDashboard(data.session);
+ }catch(e){showMessage(e.message);}
 }
-
+async function logout(){
+ await db.auth.signOut();
+ showAuth();
+ showMessage("You have logged out.");
+}
+db.auth.getSession().then(({data})=>{
+ if(data.session) showDashboard(data.session);
+});
 db.auth.onAuthStateChange((event,session)=>{
- if(session) console.log("User is logged in");
+ if(session) showDashboard(session);
 });
 </script>
 </body>
