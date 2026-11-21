@@ -143,9 +143,13 @@ box.append(card);
 }
 
 async function sendLike(id){
-const {error}=await client.from("likes").insert({from_user:currentUser.id,to_user:id,action:"like"});
-alert(error?error.message:"Like sent!");
+  const {data,error}=await client.rpc("send_like",{target_user:id});
+  if(error){alert(error.message);return;}
+  alert(data?"It's a Match! ❤️":"Like sent! ❤️");
+  loadPeople();
 }
+
+
 
 async function loadLikes(){
 const {data,error}=await client.from("likes").select("*").eq("to_user",currentUser.id);
