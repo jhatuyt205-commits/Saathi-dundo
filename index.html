@@ -1,4 +1,116 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saathi Dundo</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 20px;
+  background: #100d18;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+h1 { color: #ed6197; }
+
+.card {
+  max-width: 500px;
+  margin: 65px auto;
+  padding: 28px 22px;
+  background: #211a2b;
+  border: 1px solid #51415f;
+  border-radius: 25px;
+  text-align: center;
+}
+
+input {
+  width: 100%;
+  padding: 18px;
+  margin: 12px 0;
+  border-radius: 15px;
+  border: 1px solid #665474;
+  background: #120f19;
+  color: white;
+  font-size: 17px;
+}
+
+button {
+  width: 100%;
+  padding: 18px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 40px;
+  background: #ed6197;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.login { background: #40334c; }
+
+.hidden { display: none !important; }
+
+#message {
+  color: #ffb2d0;
+  overflow-wrap: anywhere;
+  margin-top: 22px;
+}
+
+.age {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  text-align: left;
+}
+
+.age input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+</style>
+</head>
+
+<body>
+
+<h1>❤️ Saathi Dundo</h1>
+
+<div class="card" id="auth">
+  <h2>Find Your Saathi 💗</h2>
+  <p>Join our 18+ community</p>
+
+  <input id="email" type="email" placeholder="Enter your email">
+
+  <input id="password" type="password" placeholder="Enter password">
+
+  <label class="age">
+    <input id="age" type="checkbox">
+    I confirm I am 18 or older
+  </label>
+
+  <button onclick="signup()">Create Account</button>
+  <button class="login" onclick="login()">Login</button>
+
+  <p id="message"></p>
+</div>
+
+<div class="card hidden" id="dashboard">
+  <h2>Welcome to Saathi Dundo ❤️</h2>
+  <p id="welcome"></p>
+  <p>Your account is connected successfully!</p>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<script>
 const SUPABASE_URL = "https://grevhaugdqftoiphetwd.supabase.co";
 const SUPABASE_KEY = "sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
 
@@ -12,6 +124,8 @@ function showMessage(message) {
 }
 
 function showDashboard(session) {
+  if (!session) return;
+
   document.getElementById("auth").classList.add("hidden");
   document.getElementById("dashboard").classList.remove("hidden");
   document.getElementById("welcome").textContent =
@@ -55,7 +169,6 @@ window.signup = async function () {
     } else {
       showMessage("Account created! Verify your email, then login.");
     }
-
   } catch (error) {
     showMessage(error.message);
   }
@@ -81,7 +194,7 @@ window.login = async function () {
     if (error) throw error;
 
     showDashboard(data.session);
-
+    showMessage("");
   } catch (error) {
     showMessage(error.message);
   }
@@ -94,7 +207,6 @@ window.logout = async function () {
 
     showAuth();
     showMessage("You have logged out.");
-
   } catch (error) {
     showMessage(error.message);
   }
@@ -102,14 +214,6 @@ window.logout = async function () {
 
 async function initializeAuth() {
   try {
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        showDashboard(session);
-      } else if (event === "SIGNED_OUT") {
-        showAuth();
-      }
-    });
-
     const { data, error } =
       await supabaseClient.auth.getSession();
 
@@ -119,9 +223,20 @@ async function initializeAuth() {
       showDashboard(data.session);
     }
 
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        showDashboard(session);
+      } else if (event === "SIGNED_OUT") {
+        showAuth();
+      }
+    });
   } catch (error) {
     showMessage("Connection error: " + error.message);
   }
 }
 
 initializeAuth();
+</script>
+
+</body>
+</html>
