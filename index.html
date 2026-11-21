@@ -142,12 +142,14 @@ box.append(card);
 });
 }
 
+
 async function sendLike(id){
   const {data,error}=await client.rpc("send_like",{target_user:id});
   if(error){alert(error.message);return;}
   alert(data?"It's a Match! ❤️":"Like sent! ❤️");
   loadPeople();
 }
+
 
 
 
