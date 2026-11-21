@@ -8,211 +8,165 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif}
-.container{max-width:480px;margin:auto;padding:20px}
-h1,h2{text-align:center;color:#f36b91}
-.panel{background:#202a3d;padding:22px;border-radius:20px;margin:20px 0}
-input,textarea{width:100%;padding:14px;margin:8px 0;border:1px solid #555;border-radius:10px;background:#151b29;color:white;font-size:16px}
-button{padding:13px;border:0;border-radius:12px;background:#ed6b91;color:white;font-weight:bold;font-size:16px;margin:5px;cursor:pointer}
-button.secondary{background:#424052}
-button.full{width:100%}
-nav{display:flex;justify-content:space-around;gap:5px;flex-wrap:wrap}
-nav button{font-size:13px;padding:12px 10px}
-.profile{text-align:center}
-.avatar{font-size:90px;background:#34334b;border-radius:18px;padding:30px;margin:15px 0}
-.muted{color:#c7c2d2;text-align:center}
-#app{display:none}
-#message{text-align:center;color:#ffb5ce;overflow-wrap:anywhere}
+body{margin:0;background:#101421;color:white;font-family:Arial;text-align:center;padding:25px}
+h1,h2,h3{color:#e47798}
+nav{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:30px 0}
+button{border:0;border-radius:18px;padding:16px 22px;background:#df7295;color:white;font-size:17px;font-weight:bold;margin:6px}
+input,textarea{display:block;width:100%;padding:14px;margin:10px 0;border-radius:10px;border:0}
+.panel{background:#222a3d;padding:25px;border-radius:25px;max-width:700px;margin:20px auto}
+.person{background:#343449;padding:25px;border-radius:20px;margin:15px 0}
+.hidden{display:none}
 </style>
 </head>
 <body>
-<div class="container">
 <h1>❤️ Saathi Dundo</h1>
 
 <div id="auth" class="panel">
-<h2>Welcome</h2>
-<p class="muted">Find your perfect Saathi</p>
-<input id="email" type="email" placeholder="Email address">
+<h2>Login / Signup</h2>
+<input id="email" type="email" placeholder="Email">
 <input id="password" type="password" placeholder="Password">
-<button class="full" onclick="signup()">Create Account</button>
-<button class="full secondary" onclick="login()">Login</button>
+<button onclick="signup()">Signup</button>
+<button onclick="login()">Login</button>
+<p id="message"></p>
 </div>
 
-<div id="app">
+<div id="app" class="hidden">
 <nav>
-<button onclick="tab('discover')">Discover</button>
-<button onclick="tab('likes')">Likes</button>
-<button onclick="tab('matches')">Matches</button>
-<button onclick="tab('profile')">Profile</button>
+<button onclick="showTab('discover')">Discover</button>
+<button onclick="showTab('likes')">Likes</button>
+<button onclick="showTab('matches')">Matches</button>
+<button onclick="showTab('profile')">Profile</button>
+<button onclick="logout()">Logout</button>
 </nav>
 
 <section id="discover" class="panel">
 <h2>Discover ❤️</h2>
-<div class="profile">
-<div class="avatar" id="avatar">👩</div>
-<h2 id="personName">Priya, 23</h2>
-<p id="personBio" class="muted">Love travelling, music and coffee.</p>
-<button class="secondary" onclick="passPerson()">Pass ✖</button>
-<button onclick="likePerson()">Like ❤️</button>
-</div>
-<p class="muted" id="counter"></p>
+<div id="people">Loading profiles...</div>
 </section>
 
-<section id="likes" class="panel" style="display:none">
-<h2>People You Liked</h2>
-<div id="likesList" class="muted">No likes yet.</div>
-</section>
+<section id="likes" class="panel hidden"><h2>Likes</h2><div id="likesList"></div></section>
+<section id="matches" class="panel hidden"><h2>Matches</h2><div id="matchesList"></div></section>
 
-<section id="matches" class="panel" style="display:none">
-<h2>Your Matches</h2>
-<p class="muted">Your mutual matches will appear here after database connection.</p>
-</section>
-
-<section id="profile" class="panel" style="display:none">
+<section id="profile" class="panel hidden">
 <h2>My Profile</h2>
-<p id="myEmail" class="muted"></p>
-<input id="myName" placeholder="Your name">
-<input id="myAge" type="number" placeholder="Your age (18+)">
-<textarea id="myBio" placeholder="Write something about yourself"></textarea>
-<button class="full" onclick="saveProfile()">Save Profile</button>
-<button class="full secondary" onclick="logout()">Logout</button>
+<input id="name" placeholder="Your name">
+<input id="age" type="number" placeholder="Age (18+)">
+<textarea id="bio" placeholder="About you"></textarea>
+<button onclick="saveProfile()">Save Profile</button>
+<p id="profileMessage"></p>
 </section>
-</div>
-<p id="message"></p>
 </div>
 
 <script>
 const SUPABASE_URL="https://grevhaugdqftoiphetwd.supabase.co";
 const SUPABASE_KEY="sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
 const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+let profiles=[];
 
-const people=[
- {name:"Priya",age:23,bio:"Love travelling, music and coffee.",avatar:"👩"},
- {name:"Ananya",age:24,bio:"Books, movies and exploring new places.",avatar:"👩🏻"},
- {name:"Riya",age:22,bio:"Foodie and nature lover.",avatar:"👩🏽"},
- {name:"Aarav",age:25,bio:"Music, fitness and adventures.",avatar:"👨"}
-];
-let current=0;
-let liked=[];
-
-function msg(t){document.getElementById("message").textContent=t;}
-
-function showApp(user){
- document.getElementById("auth").style.display="none";
- document.getElementById("app").style.display="block";
- document.getElementById("myEmail").textContent=user.email;
- tab("discover");
- showPerson();
-}
-
-function tab(name){
- ["discover","likes","matches","profile"].forEach(id=>{
-  document.getElementById(id).style.display=id===name?"block":"none";
- });
- if(name==="likes") renderLikes();
-}
-
-function showPerson(){
- const p=people[current%people.length];
- document.getElementById("personName").textContent=p.name+", "+p.age;
- document.getElementById("personBio").textContent=p.bio;
- document.getElementById("avatar").textContent=p.avatar;
- document.getElementById("counter").textContent="Profile "+(current+1)+" of "+people.length;
-}
-
-function passPerson(){current++;showPerson();}
-
-function likePerson(){
- const p=people[current%people.length];
- if(!liked.some(x=>x.name===p.name)) liked.push(p);
- current++;
- showPerson();
- msg("Liked "+p.name+" ❤️");
-}
-
-function renderLikes(){
- const box=document.getElementById("likesList");
- box.innerHTML=liked.length?liked.map(p=>p.name+" ❤️ — "+p.age).join("<br>"):"No likes yet.";
-}
-
-async function saveProfile(){
-  const name=document.getElementById("myName").value.trim();
-  const age=Number(document.getElementById("myAge").value);
-  const bio=document.getElementById("myBio").value.trim();
-
-  if(!name){msg("Please enter your name.");return;}
-  if(!Number.isInteger(age)||age<18||age>100){
-    msg("Please enter a valid age (18+).");
-    return;
-  }
-
-  try{
-    msg("Saving profile...");
-
-    const {data:{user},error:userError}=await client.auth.getUser();
-    if(userError)throw userError;
-    if(!user)throw new Error("Please login again.");
-
-    const {error}=await client.from("profiles").upsert({
-      id:user.id,
-      name:name,
-      age:age,
-      bio:bio,
-      updated_at:new Date().toISOString()
-    });
-
-    if(error)throw error;
-    msg("Profile saved successfully! ❤️");
-  }catch(e){
-    msg("Error: "+e.message);
-  }
-}
-
-
-
+function msg(t){document.getElementById("message").textContent=t}
 
 async function signup(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- if(!email||password.length<6){msg("Enter email and password (minimum 6 characters).");return;}
- msg("Creating account...");
- try{
-  const {data,error}=await client.auth.signUp({email,password});
-  if(error)throw error;
-  if(data.session)showApp(data.user);
-  else msg("Account created. Verify your email, then login.");
- }catch(e){msg(e.message);}
+const {error}=await client.auth.signUp({
+email:document.getElementById("email").value,
+password:document.getElementById("password").value
+});
+msg(error?error.message:"Signup successful. Login now.");
 }
 
 async function login(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- if(!email||!password){msg("Enter email and password.");return;}
- msg("Logging in...");
- try{
-  const {data,error}=await client.auth.signInWithPassword({email,password});
-  if(error)throw error;
-  showApp(data.user);
-  msg("Login successful!");
- }catch(e){msg(e.message);}
+const {data,error}=await client.auth.signInWithPassword({
+email:document.getElementById("email").value,
+password:document.getElementById("password").value
+});
+if(error)return msg(error.message);
+currentUser=data.user;
+showApp();
+}
+
+function showApp(){
+document.getElementById("auth").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
+loadProfile();
+loadPeople();
+}
+
+function showTab(tab){
+["discover","likes","matches","profile"].forEach(x=>
+document.getElementById(x).classList.toggle("hidden",x!==tab));
+if(tab==="discover")loadPeople();
+if(tab==="likes")loadLikes();
+if(tab==="matches")loadMatches();
+}
+
+async function loadProfile(){
+const {data}=await client.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
+if(data){
+document.getElementById("name").value=data.name||data.display_name||"";
+document.getElementById("age").value=data.age||"";
+document.getElementById("bio").value=data.bio||"";
+}
+}
+
+async function saveProfile(){
+const name=document.getElementById("name").value.trim();
+const age=Number(document.getElementById("age").value);
+const bio=document.getElementById("bio").value.trim();
+if(!name||age<18)return document.getElementById("profileMessage").textContent="Name and age 18+ required.";
+const {error}=await client.from("profiles").upsert({
+id:currentUser.id,name,age,bio,updated_at:new Date().toISOString()
+});
+document.getElementById("profileMessage").textContent=error?error.message:"Profile saved!";
+}
+
+async function loadPeople(){
+const box=document.getElementById("people");
+box.textContent="Loading...";
+const {data,error}=await client.from("profiles").select("*").neq("id",currentUser.id);
+if(error){box.textContent=error.message;return}
+profiles=data||[];
+if(!profiles.length){box.textContent="No other profiles yet. Invite friends to join!";return}
+box.innerHTML="";
+profiles.forEach(p=>{
+const card=document.createElement("div");
+card.className="person";
+const heading=document.createElement("h3");
+heading.textContent=(p.name||p.display_name||"User")+(p.age?", "+p.age:"");
+const bio=document.createElement("p");
+bio.textContent=p.bio||"";
+const like=document.createElement("button");
+like.textContent="Like ❤️";
+like.onclick=()=>sendLike(p.id);
+card.append(heading,bio,like);
+box.append(card);
+});
+}
+
+async function sendLike(id){
+const {error}=await client.from("likes").insert({from_user:currentUser.id,to_user:id,action:"like"});
+alert(error?error.message:"Like sent!");
+}
+
+async function loadLikes(){
+const {data,error}=await client.from("likes").select("*").eq("to_user",currentUser.id);
+document.getElementById("likesList").textContent=error?error.message:
+(data&&data.length?data.length+" people liked you":"No likes yet.");
+}
+
+async function loadMatches(){
+const {data,error}=await client.from("matches").select("*");
+document.getElementById("matchesList").textContent=error?error.message:
+(data&&data.length?data.length+" matches found":"No matches yet.");
 }
 
 async function logout(){
- const {error}=await client.auth.signOut();
- if(error){msg(error.message);return;}
- document.getElementById("app").style.display="none";
- document.getElementById("auth").style.display="block";
- msg("Logged out.");
+await client.auth.signOut();
+location.reload();
 }
 
-async function checkSession(){
- try{
-  const {data,error}=await client.auth.getSession();
-  if(error)throw error;
-  if(data.session)showApp(data.session.user);
- }catch(e){msg(e.message);}
-}
-checkSession();
+client.auth.getSession().then(({data})=>{
+if(data.session){currentUser=data.session.user;showApp()}
+});
 </script>
 </body>
 </html>
