@@ -8,143 +8,180 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif;padding:25px}
-.container{max-width:420px;margin:45px auto;background:#1c2638;padding:25px;border-radius:18px}
-h1{text-align:center;color:#ff6685}
-input{width:100%;padding:14px;margin:9px 0;border:0;border-radius:9px;font-size:16px}
-button{width:100%;padding:14px;margin-top:12px;border:0;border-radius:9px;background:#ff6685;color:white;font-size:16px;font-weight:bold}
-#dashboard{display:none}
-#message{text-align:center;color:#ffd1dc;overflow-wrap:anywhere}
+body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif}
+.container{max-width:480px;margin:auto;padding:20px}
+h1,h2{text-align:center;color:#f36b91}
+.panel{background:#202a3d;padding:22px;border-radius:20px;margin:20px 0}
+input,textarea{width:100%;padding:14px;margin:8px 0;border:1px solid #555;border-radius:10px;background:#151b29;color:white;font-size:16px}
+button{padding:13px;border:0;border-radius:12px;background:#ed6b91;color:white;font-weight:bold;font-size:16px;margin:5px;cursor:pointer}
+button.secondary{background:#424052}
+button.full{width:100%}
+nav{display:flex;justify-content:space-around;gap:5px;flex-wrap:wrap}
+nav button{font-size:13px;padding:12px 10px}
+.profile{text-align:center}
+.avatar{font-size:90px;background:#34334b;border-radius:18px;padding:30px;margin:15px 0}
+.muted{color:#c7c2d2;text-align:center}
+#app{display:none}
+#message{text-align:center;color:#ffb5ce;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Saathi Dundo ❤️</h1>
+<h1>❤️ Saathi Dundo</h1>
 
-<div id="auth">
+<div id="auth" class="panel">
 <h2>Welcome</h2>
+<p class="muted">Find your perfect Saathi</p>
 <input id="email" type="email" placeholder="Email address">
 <input id="password" type="password" placeholder="Password">
-<button onclick="signup()">Create Account</button>
-<button onclick="login()">Login</button>
+<button class="full" onclick="signup()">Create Account</button>
+<button class="full secondary" onclick="login()">Login</button>
 </div>
 
-<div id="dashboard">
-<h2>Welcome to Saathi Dundo!</h2>
-<p id="userEmail"></p>
-<p>Your account is logged in successfully.</p>
-<button onclick="logout()">Logout</button>
-</div>
+<div id="app">
+<nav>
+<button onclick="tab('discover')">Discover</button>
+<button onclick="tab('likes')">Likes</button>
+<button onclick="tab('matches')">Matches</button>
+<button onclick="tab('profile')">Profile</button>
+</nav>
 
+<section id="discover" class="panel">
+<h2>Discover ❤️</h2>
+<div class="profile">
+<div class="avatar" id="avatar">👩</div>
+<h2 id="personName">Priya, 23</h2>
+<p id="personBio" class="muted">Love travelling, music and coffee.</p>
+<button class="secondary" onclick="passPerson()">Pass ✖</button>
+<button onclick="likePerson()">Like ❤️</button>
+</div>
+<p class="muted" id="counter"></p>
+</section>
+
+<section id="likes" class="panel" style="display:none">
+<h2>People You Liked</h2>
+<div id="likesList" class="muted">No likes yet.</div>
+</section>
+
+<section id="matches" class="panel" style="display:none">
+<h2>Your Matches</h2>
+<p class="muted">Your mutual matches will appear here after database connection.</p>
+</section>
+
+<section id="profile" class="panel" style="display:none">
+<h2>My Profile</h2>
+<p id="myEmail" class="muted"></p>
+<input id="myName" placeholder="Your name">
+<input id="myAge" type="number" placeholder="Your age (18+)">
+<textarea id="myBio" placeholder="Write something about yourself"></textarea>
+<button class="full" onclick="saveProfile()">Save Profile</button>
+<button class="full secondary" onclick="logout()">Logout</button>
+</section>
+</div>
 <p id="message"></p>
 </div>
 
 <script>
-const SUPABASE_URL = "https://grevhaugdqftoiphetwd.supabase.co";
-const SUPABASE_KEY = "sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
+const SUPABASE_URL="https://grevhaugdqftoiphetwd.supabase.co";
+const SUPABASE_KEY="sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
+const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const people=[
+ {name:"Priya",age:23,bio:"Love travelling, music and coffee.",avatar:"👩"},
+ {name:"Ananya",age:24,bio:"Books, movies and exploring new places.",avatar:"👩🏻"},
+ {name:"Riya",age:22,bio:"Foodie and nature lover.",avatar:"👩🏽"},
+ {name:"Aarav",age:25,bio:"Music, fitness and adventures.",avatar:"👨"}
+];
+let current=0;
+let liked=[];
 
-const message = document.getElementById("message");
+function msg(t){document.getElementById("message").textContent=t;}
 
-function showMessage(text){
-  message.textContent = text;
+function showApp(user){
+ document.getElementById("auth").style.display="none";
+ document.getElementById("app").style.display="block";
+ document.getElementById("myEmail").textContent=user.email;
+ tab("discover");
+ showPerson();
 }
 
-function showDashboard(user){
-  document.getElementById("auth").style.display = "none";
-  document.getElementById("dashboard").style.display = "block";
-  document.getElementById("userEmail").textContent = user.email;
-  showMessage("Login successful!");
+function tab(name){
+ ["discover","likes","matches","profile"].forEach(id=>{
+  document.getElementById(id).style.display=id===name?"block":"none";
+ });
+ if(name==="likes") renderLikes();
 }
 
-function showLogin(){
-  document.getElementById("auth").style.display = "block";
-  document.getElementById("dashboard").style.display = "none";
+function showPerson(){
+ const p=people[current%people.length];
+ document.getElementById("personName").textContent=p.name+", "+p.age;
+ document.getElementById("personBio").textContent=p.bio;
+ document.getElementById("avatar").textContent=p.avatar;
+ document.getElementById("counter").textContent="Profile "+(current+1)+" of "+people.length;
+}
+
+function passPerson(){current++;showPerson();}
+
+function likePerson(){
+ const p=people[current%people.length];
+ if(!liked.some(x=>x.name===p.name)) liked.push(p);
+ current++;
+ showPerson();
+ msg("Liked "+p.name+" ❤️");
+}
+
+function renderLikes(){
+ const box=document.getElementById("likesList");
+ box.innerHTML=liked.length?liked.map(p=>p.name+" ❤️ — "+p.age).join("<br>"):"No likes yet.";
+}
+
+function saveProfile(){
+ const age=Number(document.getElementById("myAge").value);
+ if(age<18){msg("You must be 18 or older.");return;}
+ msg("Profile details entered. Database saving will be connected next.");
 }
 
 async function signup(){
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-
-  if(!email || !password){
-    showMessage("Email aur password bharo.");
-    return;
-  }
-
-  showMessage("Creating account...");
-
-  try{
-    const {data,error} = await supabaseClient.auth.signUp({
-      email:email,
-      password:password
-    });
-
-    if(error) throw error;
-
-    if(data.session){
-      showDashboard(data.session.user);
-    }else{
-      showMessage("Account created! Email verification link check karo.");
-    }
-  }catch(error){
-    showMessage(error.message);
-  }
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ if(!email||password.length<6){msg("Enter email and password (minimum 6 characters).");return;}
+ msg("Creating account...");
+ try{
+  const {data,error}=await client.auth.signUp({email,password});
+  if(error)throw error;
+  if(data.session)showApp(data.user);
+  else msg("Account created. Verify your email, then login.");
+ }catch(e){msg(e.message);}
 }
 
 async function login(){
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-
-  if(!email || !password){
-    showMessage("Email aur password bharo.");
-    return;
-  }
-
-  showMessage("Logging in...");
-
-  try{
-    const {data,error} = await supabaseClient.auth.signInWithPassword({
-      email:email,
-      password:password
-    });
-
-    if(error) throw error;
-    showDashboard(data.user);
-  }catch(error){
-    showMessage(error.message);
-  }
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ if(!email||!password){msg("Enter email and password.");return;}
+ msg("Logging in...");
+ try{
+  const {data,error}=await client.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  showApp(data.user);
+  msg("Login successful!");
+ }catch(e){msg(e.message);}
 }
 
 async function logout(){
-  showMessage("Logging out...");
-  const {error} = await supabaseClient.auth.signOut();
-
-  if(error){
-    showMessage(error.message);
-    return;
-  }
-
-  showLogin();
-  showMessage("Logged out successfully.");
+ const {error}=await client.auth.signOut();
+ if(error){msg(error.message);return;}
+ document.getElementById("app").style.display="none";
+ document.getElementById("auth").style.display="block";
+ msg("Logged out.");
 }
 
 async function checkSession(){
-  try{
-    const {data,error} = await supabaseClient.auth.getSession();
-    if(error) throw error;
-
-    if(data.session){
-      showDashboard(data.session.user);
-    }
-  }catch(error){
-    showMessage(error.message);
-  }
+ try{
+  const {data,error}=await client.auth.getSession();
+  if(error)throw error;
+  if(data.session)showApp(data.session.user);
+ }catch(e){msg(e.message);}
 }
-
 checkSession();
 </script>
 </body>
