@@ -135,10 +135,38 @@ function renderLikes(){
  box.innerHTML=liked.length?liked.map(p=>p.name+" ❤️ — "+p.age).join("<br>"):"No likes yet.";
 }
 
-function saveProfile(){
- const age=Number(document.getElementById("myAge").value);
- if(age<18){msg("You must be 18 or older.");return;}
- msg("Profile details entered. Database saving will be connected next.");
+
+async function saveProfile(){
+  const name=document.getElementById("myName").value.trim();
+  const age=Number(document.getElementById("myAge").value);
+  const bio=document.getElementById("myBio").value.trim();
+
+  if(!name){msg("Please enter your name.");return;}
+  if(!Number.isInteger(age)||age<18||age>100){
+    msg("Please enter a valid age (18+).");
+    return;
+  }
+
+  try{
+    msg("Saving profile...");
+
+    const {data:{user},error:userError}=await client.auth.getUser();
+    if(userError)throw userError;
+    if(!user)throw new Error("Please login again.");
+
+    const {error}=await client.from("profiles").upsert({
+      id:user.id,
+      name:name,
+      age:age,
+      bio:bio,
+      updated_at:new Date().toISOString()
+    });
+
+    if(error)throw error;
+    msg("Profile saved successfully! ❤️");
+  }catch(e){
+    msg("Error: "+e.message);
+  }
 }
 
 async function signup(){
