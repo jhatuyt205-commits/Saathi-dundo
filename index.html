@@ -4,159 +4,148 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Saathi Dundo ❤️</title>
+<title>Saathi Dundo</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#100d18;color:white;font-family:Arial,sans-serif}
-header{padding:20px;text-align:center;color:#e66b9c;font-size:27px;font-weight:bold}
-.page{max-width:480px;margin:auto;padding:15px}
-.card{background:#211a2b;border:1px solid #55415f;border-radius:22px;padding:20px;margin:15px 0;text-align:center}
-input{width:100%;padding:15px;margin:8px 0;border:1px solid #66516f;border-radius:12px;background:#17121e;color:white;font-size:16px}
-button{border:0;border-radius:30px;padding:14px 22px;background:#df6598;color:white;font-size:16px;font-weight:bold;cursor:pointer;margin:6px}
-button.secondary{background:#45364f}
-button.danger{background:#8e405e}
-.hidden{display:none}
-.photo{height:330px;border-radius:18px;background:linear-gradient(140deg,#58304e,#211a2b);display:flex;align-items:center;justify-content:center;font-size:90px;margin-bottom:15px}
-nav{display:flex;justify-content:space-around;position:sticky;bottom:0;background:#211a2b;padding:12px 0}
-nav button{font-size:13px;padding:12px}
-.small{color:#c5b8cc;font-size:14px}
-#message{color:#ff9fc0;text-align:center}
+body{margin:0;background:#101522;color:white;font-family:Arial,sans-serif;padding:25px}
+.container{max-width:420px;margin:45px auto;background:#1c2638;padding:25px;border-radius:18px}
+h1{text-align:center;color:#ff6685}
+input{width:100%;padding:14px;margin:9px 0;border:0;border-radius:9px;font-size:16px}
+button{width:100%;padding:14px;margin-top:12px;border:0;border-radius:9px;background:#ff6685;color:white;font-size:16px;font-weight:bold}
+#dashboard{display:none}
+#message{text-align:center;color:#ffd1dc;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
-<header>❤️ Saathi Dundo</header>
+<div class="container">
+<h1>Saathi Dundo ❤️</h1>
 
-<div class="page">
-<div id="auth" class="card">
-<h2>Welcome ❤️</h2>
-<p class="small">Find your perfect Saathi</p>
+<div id="auth">
+<h2>Welcome</h2>
 <input id="email" type="email" placeholder="Email address">
-<input id="password" type="password" placeholder="Password (minimum 6 characters)">
-<label class="small"><input id="age" type="checkbox" style="width:auto"> I confirm I am 18 or older</label>
-<br>
+<input id="password" type="password" placeholder="Password">
 <button onclick="signup()">Create Account</button>
-<button class="secondary" onclick="login()">Login</button>
+<button onclick="login()">Login</button>
+</div>
+
+<div id="dashboard">
+<h2>Welcome to Saathi Dundo!</h2>
+<p id="userEmail"></p>
+<p>Your account is logged in successfully.</p>
+<button onclick="logout()">Logout</button>
+</div>
+
 <p id="message"></p>
 </div>
 
-<div id="app" class="hidden">
-<div id="discover">
-<h2>Discover People ❤️</h2>
-<div class="card">
-<div class="photo" id="photo">😊</div>
-<h2 id="personName">Aarav, 24</h2>
-<p id="personBio">Loves music, travel and coffee.</p>
-<p class="small" id="personCity">Ghaziabad</p>
-<button class="danger" onclick="nextPerson(false)">✕ Dislike</button>
-<button onclick="nextPerson(true)">❤️ Like</button>
-</div>
-</div>
-
-<div id="matches" class="hidden card">
-<h2>❤️ Your Likes</h2>
-<div id="likeList">No likes yet. Explore profiles!</div>
-</div>
-
-<div id="profile" class="hidden card">
-<h2>My Profile</h2>
-<p id="myEmail"></p>
-<p class="small">Your Saathi Dundo account is active.</p>
-<button class="danger" onclick="logout()">Logout</button>
-</div>
-</div>
-</div>
-
-<nav id="nav" class="hidden">
-<button onclick="showTab('discover')">❤️ Discover</button>
-<button onclick="showTab('matches')">💖 Likes</button>
-<button onclick="showTab('profile')">👤 Profile</button>
-</nav>
-
 <script>
-const URL="https://grevhaugdqftoiphetwd.supabase.co";
-const KEY="sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
-const db=window.supabase.createClient(URL,KEY);
+const SUPABASE_URL = "https://grevhaugdqftoiphetwd.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xYPVSCTi-7raXKmhKCdCwg_YtdyAiHH";
 
-const people=[
-{name:"Aarav, 24",bio:"Loves music, travel and coffee.",city:"Ghaziabad",emoji:"😊"},
-{name:"Priya, 23",bio:"Books, movies and exploring new places.",city:"Noida",emoji:"🌸"},
-{name:"Rohan, 25",bio:"Fitness, food and long drives.",city:"Delhi",emoji:"😎"},
-{name:"Ananya, 22",bio:"Art, nature and good conversations.",city:"Ghaziabad",emoji:"🌷"},
-{name:"Kabir, 26",bio:"Travel lover and photography fan.",city:"Noida",emoji:"🤗"}
-];
-let index=0,likes=[];
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-function msg(t){document.getElementById("message").textContent=t}
+const message = document.getElementById("message");
+
+function showMessage(text){
+  message.textContent = text;
+}
+
+function showDashboard(user){
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+  document.getElementById("userEmail").textContent = user.email;
+  showMessage("Login successful!");
+}
+
+function showLogin(){
+  document.getElementById("auth").style.display = "block";
+  document.getElementById("dashboard").style.display = "none";
+}
 
 async function signup(){
-const email=document.getElementById("email").value.trim();
-const password=document.getElementById("password").value;
-if(!document.getElementById("age").checked)return msg("You must confirm you are 18 or older.");
-if(!email||password.length<6)return msg("Enter email and password (minimum 6 characters).");
-msg("Creating account...");
-const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:"https://jhatuyt205-commits.github.io/Saathi-dundo/"}});
-if(error)return msg(error.message);
-msg("Account created! Check your email for confirmation, then login.");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if(!email || !password){
+    showMessage("Email aur password bharo.");
+    return;
+  }
+
+  showMessage("Creating account...");
+
+  try{
+    const {data,error} = await supabaseClient.auth.signUp({
+      email:email,
+      password:password
+    });
+
+    if(error) throw error;
+
+    if(data.session){
+      showDashboard(data.session.user);
+    }else{
+      showMessage("Account created! Email verification link check karo.");
+    }
+  }catch(error){
+    showMessage(error.message);
+  }
 }
 
 async function login(){
-const email=document.getElementById("email").value.trim();
-const password=document.getElementById("password").value;
-if(!email||!password)return msg("Enter email and password.");
-msg("Logging in...");
-const {error}=await db.auth.signInWithPassword({email,password});
-if(error)return msg(error.message);
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if(!email || !password){
+    showMessage("Email aur password bharo.");
+    return;
+  }
+
+  showMessage("Logging in...");
+
+  try{
+    const {data,error} = await supabaseClient.auth.signInWithPassword({
+      email:email,
+      password:password
+    });
+
+    if(error) throw error;
+    showDashboard(data.user);
+  }catch(error){
+    showMessage(error.message);
+  }
 }
 
-function enterApp(session){
-document.getElementById("auth").classList.add("hidden");
-document.getElementById("app").classList.remove("hidden");
-document.getElementById("nav").classList.remove("hidden");
-document.getElementById("myEmail").textContent=session.user.email;
-showPerson();
+async function logout(){
+  showMessage("Logging out...");
+  const {error} = await supabaseClient.auth.signOut();
+
+  if(error){
+    showMessage(error.message);
+    return;
+  }
+
+  showLogin();
+  showMessage("Logged out successfully.");
 }
 
-function showPerson(){
-if(index>=people.length){
-document.getElementById("discover").innerHTML='<div class="card"><h2>That is everyone for now! ❤️</h2><p>Check back later.</p></div>';
-return;
-}
-const p=people[index];
-document.getElementById("personName").textContent=p.name;
-document.getElementById("personBio").textContent=p.bio;
-document.getElementById("personCity").textContent=p.city;
-document.getElementById("photo").textContent=p.emoji;
+async function checkSession(){
+  try{
+    const {data,error} = await supabaseClient.auth.getSession();
+    if(error) throw error;
+
+    if(data.session){
+      showDashboard(data.session.user);
+    }
+  }catch(error){
+    showMessage(error.message);
+  }
 }
 
-function nextPerson(liked){
-if(liked){
-likes.push(people[index].name);
-document.getElementById("likeList").innerHTML=likes.map(x=>"<p>❤️ "+x+"</p>").join("");
-}
-index++;
-showPerson();
-}
-
-function showTab(tab){
-["discover","matches","profile"].forEach(x=>document.getElementById(x).classList.add("hidden"));
-document.getElementById(tab).classList.remove("hidden");
-}
-
-async function logout(){await db.auth.signOut()}
-
-db.auth.onAuthStateChange((event,session)=>{
-if(session)enterApp(session);
-else{
-document.getElementById("auth").classList.remove("hidden");
-document.getElementById("app").classList.add("hidden");
-document.getElementById("nav").classList.add("hidden");
-}
-});
-
-db.auth.getSession().then(({data})=>{
-if(data.session)enterApp(data.session);
-});
+checkSession();
 </script>
 </body>
 </html>
