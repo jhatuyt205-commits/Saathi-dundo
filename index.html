@@ -135,7 +135,6 @@ function renderLikes(){
  box.innerHTML=liked.length?liked.map(p=>p.name+" ❤️ — "+p.age).join("<br>"):"No likes yet.";
 }
 
-
 async function saveProfile(){
   const name=document.getElementById("myName").value.trim();
   const age=Number(document.getElementById("myAge").value);
@@ -168,6 +167,9 @@ async function saveProfile(){
     msg("Error: "+e.message);
   }
 }
+
+
+
 
 async function signup(){
  const email=document.getElementById("email").value.trim();
